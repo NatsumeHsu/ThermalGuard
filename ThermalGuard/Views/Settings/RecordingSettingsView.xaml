@@ -1,0 +1,41 @@
+<UserControl x:Class="ThermalGuard.Views.Settings.RecordingSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    Loaded="UserControlLoaded">
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <StackPanel Margin="30,18,30,28">
+      <TextBlock Margin="0,0,0,26" FontSize="20" FontWeight="SemiBold" Text="錄影設定"/>
+      <CheckBox x:Name="RecordingEnabledBox" FontSize="15" Content="啟用錄影緩衝"/>
+      <Grid Margin="0,24,0,0">
+        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="22"/><ColumnDefinition/></Grid.ColumnDefinitions>
+        <TextBox x:Name="SegmentSecondsBox" Text="5" materialDesign:HintAssist.Hint="每段暫存時間（秒）"/>
+        <TextBox x:Name="BufferMinutesBox" Grid.Column="2" Text="3" materialDesign:HintAssist.Hint="循環保留時間（分鐘）"/>
+      </Grid>
+      <TextBox x:Name="PostEventSecondsBox" Margin="0,22,0,0" Text="10"
+          materialDesign:HintAssist.Hint="事件結束後延長時間（秒）"/>
+      <Grid Margin="0,22,0,0">
+        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="14"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+        <TextBox x:Name="RecordingDirectoryBox" TextChanged="RecordingDirectoryChanged"
+            materialDesign:HintAssist.Hint="暫存與事件影片資料夾"/>
+        <Button Grid.Column="2" MinHeight="48" Padding="18,8"
+            Style="{StaticResource MaterialDesignOutlinedButton}" Content="瀏覽"
+            Click="BrowseRecordingDirectoryClick"/>
+      </Grid>
+      <Grid Margin="0,22,0,0">
+        <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="22"/><ColumnDefinition/></Grid.ColumnDefinitions>
+        <TextBox x:Name="ReservedSpaceGbBox" Text="10" materialDesign:HintAssist.Hint="預留磁碟空間（GB）"/>
+        <CheckBox x:Name="OverwriteOldestEventsBox" Grid.Column="2" FontSize="14"
+            VerticalAlignment="Center" Content="空間不足時覆寫最舊事件影片"/>
+      </Grid>
+      <TextBlock x:Name="AvailableSpaceText" Margin="0,16,0,0"
+          Foreground="{StaticResource MutedBrush}" Text="可用空間：讀取中"/>
+      <TextBlock Margin="0,18,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+          Text="事件觸發條件為攝影機狀態進入「溫升」、「預警」或「警報」。若 21 組框溫全部停用，仍會保留循環暫存，但不會產生事件影片。完成的事件影片使用 MPEG-TS 格式。"/>
+      <Button Margin="0,26,4,6" MinWidth="160" Height="48" Padding="20,0"
+          HorizontalAlignment="Right" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+          Style="{StaticResource MaterialDesignRaisedButton}" Content="儲存錄影設定"
+          Click="SaveRecordingClick"/>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

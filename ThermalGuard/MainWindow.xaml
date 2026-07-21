@@ -1,0 +1,353 @@
+<Window x:Class="ThermalGuard.MainWindow"
+        x:Name="RootWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:controls="clr-namespace:ThermalGuard.Controls"
+        Title="ThermalGuard Pro"
+    Width="1600"
+    Height="900"
+    MinWidth="1280"
+    MinHeight="720"
+    Loaded="WindowLoaded"
+    Closing="WindowClosing"
+    WindowState="Maximized"
+    WindowStyle="None"
+    ResizeMode="NoResize"
+    Background="{StaticResource BackgroundBrush}"
+    Foreground="{StaticResource TextBrush}">
+  <Grid x:Name="RootGrid"
+      Margin="12"
+      Background="{StaticResource BackgroundBrush}"
+      TextElement.Foreground="{StaticResource TextBrush}">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="260"/>
+      <ColumnDefinition Width="10"/>
+      <ColumnDefinition Width="*"
+          MinWidth="0"/>
+    </Grid.ColumnDefinitions>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="84"/>
+      <RowDefinition Height="10"/>
+      <RowDefinition Height="*"
+          MinHeight="0"/>
+      <RowDefinition Height="10"/>
+      <RowDefinition Height="42"/>
+    </Grid.RowDefinitions>
+
+    <materialDesign:Card Padding="16"
+        UniformCornerRadius="12"
+        Background="{StaticResource PanelBrush}"
+        MouseLeftButtonDown="TitleBarMouseLeftButtonDown">
+      <StackPanel Orientation="Horizontal">
+        <Border Width="44"
+            Height="44"
+            CornerRadius="10"
+            Background="{DynamicResource PrimaryHueMidBrush}">
+          <materialDesign:PackIcon Kind="Camera"
+              Width="25"
+              Height="25"
+              HorizontalAlignment="Center"
+              VerticalAlignment="Center"
+              Foreground="White"/>
+        </Border>
+        <TextBlock Margin="14,0,0,0"
+            FontSize="18"
+            FontWeight="SemiBold"
+            VerticalAlignment="Center"
+            Text="ThermalGuard Pro"/>
+      </StackPanel>
+    </materialDesign:Card>
+
+    <materialDesign:Card Grid.Column="2"
+        Padding="20,10"
+        UniformCornerRadius="12"
+        Background="{StaticResource PanelBrush}"
+        MouseLeftButtonDown="TitleBarMouseLeftButtonDown">
+      <Grid>
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="*"
+              MinWidth="0"/>
+          <ColumnDefinition Width="16"/>
+          <ColumnDefinition Width="Auto"/>
+        </Grid.ColumnDefinitions>
+        <TextBlock FontSize="22"
+            FontWeight="SemiBold"
+            VerticalAlignment="Center"
+            Text="即時監看"/>
+        <StackPanel Grid.Column="2"
+            Orientation="Horizontal"
+            VerticalAlignment="Center">
+          <materialDesign:PackIcon Kind="AccessPoint"
+              Width="18"
+              Height="18"
+              Foreground="{StaticResource OnlineBrush}"
+              VerticalAlignment="Center"/>
+          <TextBlock Margin="5,0,14,0"
+              Foreground="{StaticResource OnlineBrush}"
+              FontWeight="SemiBold"
+              VerticalAlignment="Center"
+              Text="LIVE"/>
+          <ComboBox Width="155"
+              Margin="0,0,6,0"
+              materialDesign:HintAssist.Hint="畫面配置"
+                    Style="{StaticResource OutlinedComboBoxStyle}"
+              SelectedIndex="{Binding GridColumns, Mode=TwoWay}">
+            <ComboBoxItem Content="自動配置"/>
+            <ComboBoxItem Content="1 畫面（1×1）"/>
+            <ComboBoxItem Content="4 畫面（2×2）"/>
+            <ComboBoxItem Content="9 畫面（3×3）"/>
+            <ComboBoxItem Content="16 畫面（4×4）"/>
+            <ComboBoxItem Content="25 畫面（5×5）"/>
+            <ComboBoxItem Content="36 畫面（6×6）"/>
+            <ComboBoxItem Content="49 畫面（7×7）"/>
+            <ComboBoxItem Content="64 畫面（8×8）"/>
+          </ComboBox>
+          <Button Style="{StaticResource MaterialDesignRaisedButton}"
+              Margin="4,0"
+              Padding="12,7"
+              Click="SettingsClick">
+            <StackPanel Orientation="Horizontal"
+                VerticalAlignment="Center">
+              <materialDesign:PackIcon Kind="Cog"
+                  Width="18"
+                  Height="18"
+                  Margin="0,0,6,0"
+                  VerticalAlignment="Center"/>
+              <TextBlock VerticalAlignment="Center"
+                  Text="系統設定"/>
+            </StackPanel>
+          </Button>
+          <Button Style="{StaticResource MaterialDesignIconButton}"
+              ToolTip="關於"
+              Click="AboutClick">
+            <materialDesign:PackIcon Kind="InformationOutline"/>
+          </Button>
+          <Button Style="{StaticResource MaterialDesignIconButton}"
+              ToolTip="最小化"
+              Click="MinimizeClick">
+            <materialDesign:PackIcon Kind="WindowMinimize"/>
+          </Button>
+          <Button Style="{StaticResource MaterialDesignIconButton}"
+              ToolTip="關閉"
+              Click="CloseClick">
+            <materialDesign:PackIcon Kind="Close"/>
+          </Button>
+        </StackPanel>
+      </Grid>
+    </materialDesign:Card>
+
+    <materialDesign:Card Grid.Row="2"
+        Padding="14"
+        UniformCornerRadius="12"
+        Background="{StaticResource PanelBrush}">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="210"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal"
+            VerticalAlignment="Center">
+          <materialDesign:PackIcon Kind="Camera"
+              Width="19"
+              Height="19"
+              VerticalAlignment="Center"/>
+          <TextBlock Margin="8,0,0,0"
+              FontSize="16"
+              FontWeight="SemiBold"
+              VerticalAlignment="Center"
+              Text="攝影機清單"/>
+        </StackPanel>
+        <TextBox x:Name="SearchBox"
+            Grid.Row="1"
+            Margin="0,14,0,10"
+            materialDesign:HintAssist.Hint="搜尋攝影機"
+            materialDesign:TextFieldAssist.HasClearButton="True"
+            TextChanged="SearchChanged"/>
+        <ListBox x:Name="CameraList"
+            Grid.Row="2"
+            Padding="0"
+            ItemsSource="{Binding Cameras, Mode=OneWay}"
+            SelectedItem="{Binding SelectedCamera, Mode=TwoWay}"
+            Background="Transparent"
+            BorderThickness="0"
+            PreviewMouseMove="CameraListMouseMove">
+          <ListBox.ItemContainerStyle>
+            <Style TargetType="ListBoxItem"
+                BasedOn="{StaticResource MaterialDesignListBoxItem}">
+              <Setter Property="HorizontalContentAlignment"
+                  Value="Stretch"/>
+              <Setter Property="Padding"
+                  Value="4"/>
+              <Setter Property="Margin"
+                  Value="0,2"/>
+            </Style>
+          </ListBox.ItemContainerStyle>
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Grid Margin="4,5">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="Auto"/>
+                  <ColumnDefinition/>
+                  <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <materialDesign:PackIcon Kind="Circle"
+                    Width="9"
+                    Height="9"
+                    Foreground="{StaticResource OnlineBrush}"
+                    VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="1"
+                    Margin="10,0">
+                  <TextBlock FontWeight="SemiBold"><Run Text="{Binding Id, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding Name, Mode=OneWay}"/></TextBlock>
+                  <TextBlock FontSize="11"
+                      Foreground="{StaticResource MutedBrush}"><Run Text="{Binding StreamStatus, Mode=OneWay}"/><Run Text="  "/><Run Text="{Binding Temperature, Mode=OneWay, StringFormat={}{0:F1}°C}"/><Run Text="  "/><Run Text="{Binding TemperatureStatus, Mode=OneWay}"/></TextBlock>
+                </StackPanel>
+                <materialDesign:PackIcon Grid.Column="2"
+                    Kind="DragVertical"
+                    Foreground="{StaticResource MutedBrush}"
+                    VerticalAlignment="Center"/>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+        <Border Grid.Row="3" Height="1" Margin="0,12,0,12"
+            Background="{StaticResource MutedBrush}" Opacity="0.25"/>
+        <StackPanel Grid.Row="4" Margin="2,0,0,8" Orientation="Horizontal">
+          <materialDesign:PackIcon Kind="AlertOutline" Width="18" Height="18"
+              Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"/>
+          <TextBlock Margin="8,0,0,0" FontSize="15" FontWeight="SemiBold"
+              VerticalAlignment="Center" Text="事件紀錄"/>
+          <Border Margin="8,0,0,0" Padding="7,1" CornerRadius="9"
+              Background="{StaticResource PrimaryContainerBrush}">
+            <TextBlock FontSize="11" Text="{Binding Events.Count, Mode=OneWay}"/>
+          </Border>
+        </StackPanel>
+        <ListBox Grid.Row="5" ItemsSource="{Binding Events, Mode=OneWay}"
+            Background="Transparent" BorderThickness="0" Padding="0"
+            ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+          <ListBox.ItemContainerStyle>
+            <Style TargetType="ListBoxItem" BasedOn="{StaticResource MaterialDesignListBoxItem}">
+              <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+              <Setter Property="Padding" Value="6"/>
+              <Setter Property="Margin" Value="0,1"/>
+            </Style>
+          </ListBox.ItemContainerStyle>
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                <StackPanel>
+                  <TextBlock FontSize="12" FontWeight="SemiBold">
+                    <Run Text="{Binding Camera.Id, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding EventType, Mode=OneWay}"/>
+                  </TextBlock>
+                  <TextBlock Margin="0,3,0,0" FontSize="10" Foreground="{StaticResource MutedBrush}">
+                    <Run Text="{Binding StartedAt, Mode=OneWay, StringFormat={}{0:HH:mm:ss}}"/><Run Text="　"/><Run Text="{Binding Temperature, Mode=OneWay, StringFormat={}{0:F1}°C}"/>
+                  </TextBlock>
+                  <TextBlock Margin="0,2,0,0" FontSize="10" Foreground="{StaticResource MutedBrush}"
+                      Text="{Binding RegionText, Mode=OneWay}"/>
+                </StackPanel>
+                <TextBlock Grid.Column="1" Margin="6,0,0,0" FontSize="10"
+                    Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center"
+                    Text="{Binding StateText, Mode=OneWay}"/>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </materialDesign:Card>
+
+    <materialDesign:Card Grid.Row="2"
+        Grid.Column="2"
+        Padding="5"
+        UniformCornerRadius="12"
+        Background="{StaticResource PanelBrush}">
+      <Grid>
+        <ItemsControl x:Name="CameraWall"
+            ItemsSource="{Binding DisplayedCameraSlots, Mode=OneWay}"
+            AllowDrop="True"
+            Drop="WallDrop"
+            DragOver="WallDragOver">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid
+                Rows="{Binding DataContext.EffectiveColumns, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"
+                Columns="{Binding DataContext.EffectiveColumns, Mode=OneWay, RelativeSource={RelativeSource AncestorType=Window}}"/>
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate>
+              <controls:CameraTile DataContext="{Binding Camera, Mode=OneWay}"
+                  MouseLeftButtonDown="TileMouseDown"
+                  MouseMove="TileMouseMove"
+                  MouseDoubleClick="TileMouseDoubleClick"/>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </Grid>
+    </materialDesign:Card>
+
+    <materialDesign:Card Grid.Row="4"
+        Grid.ColumnSpan="3"
+        Padding="12,0"
+        UniformCornerRadius="10"
+        Background="{StaticResource PanelBrush}">
+      <Grid>
+        <StackPanel Orientation="Horizontal"
+            VerticalAlignment="Center">
+          <materialDesign:PackIcon Kind="ShieldCheck"
+              Width="16"
+              Height="16"
+              Foreground="{StaticResource OnlineBrush}"
+              VerticalAlignment="Center"/>
+          <TextBlock Margin="7,0,0,0"
+              VerticalAlignment="Center"><Run Text="系統監控中　攝影機 "/><Run Text="{Binding OnlineCount, Mode=OneWay}"/><Run Text=" / "/><Run Text="{Binding Cameras.Count, Mode=OneWay}"/><Run Text=" 在線"/></TextBlock>
+        </StackPanel>
+        <StackPanel HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            VerticalAlignment="Center">
+          <materialDesign:PackIcon Kind="ClockOutline"
+              Width="16"
+              Height="16"
+              Foreground="{StaticResource MutedBrush}"
+              VerticalAlignment="Center"/>
+          <TextBlock Margin="6,0,0,0"
+              Foreground="{StaticResource MutedBrush}"
+              VerticalAlignment="Center"
+              Text="{Binding CurrentTime, Mode=OneWay}"/>
+        </StackPanel>
+        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal" VerticalAlignment="Center">
+          <StackPanel Width="120" Margin="0,0,16,0">
+            <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}"
+                Text="{Binding CpuUsage, Mode=OneWay, StringFormat=CPU {0:F0}%}"/>
+            <ProgressBar Height="8" Minimum="0" Maximum="100"
+                Background="Silver"
+                BorderBrush="#FFE0E0E0" BorderThickness="1"
+                Foreground="{Binding CpuUsage, Converter={StaticResource PercentageToBrushConverter}}"
+                Value="{Binding CpuUsage, Mode=OneWay}"/>
+          </StackPanel>
+          <StackPanel Width="175" Margin="0,0,16,0">
+            <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}"><Run Text="RAM "/><Run Text="{Binding MemorySummary, Mode=OneWay}"/></TextBlock>
+            <ProgressBar Height="8" Minimum="0" Maximum="100"
+                Background="Silver"
+                BorderBrush="#FFE0E0E0" BorderThickness="1"
+                Foreground="{Binding MemoryUsage, Converter={StaticResource PercentageToBrushConverter}}"
+                Value="{Binding MemoryUsage, Mode=OneWay}"/>
+          </StackPanel>
+          <StackPanel Width="185">
+            <TextBlock FontSize="11" Foreground="{StaticResource MutedBrush}" Text="{Binding DiskSummary, Mode=OneWay}"/>
+            <ProgressBar Height="8" Minimum="0" Maximum="100"
+                Background="Silver"
+                BorderBrush="#FFE0E0E0" BorderThickness="1"
+                Foreground="{Binding DiskUsage, Converter={StaticResource PercentageToBrushConverter}}"
+                Value="{Binding DiskUsage, Mode=OneWay}"/>
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </materialDesign:Card>
+
+  </Grid>
+</Window>

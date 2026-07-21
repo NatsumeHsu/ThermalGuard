@@ -1,0 +1,152 @@
+<UserControl x:Class="ThermalGuard.Views.Settings.EventSettingsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    Loaded="UserControlLoaded">
+  <Grid Margin="30,18,30,28">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <Grid>
+      <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="240"/></Grid.ColumnDefinitions>
+      <StackPanel>
+        <TextBlock FontSize="20" FontWeight="SemiBold" Text="程式內部事件設定"/>
+        <TextBlock Margin="0,5,18,0" Foreground="{StaticResource MutedBrush}"
+            Text="設定程式內部計算的高溫與溫升觸發條件"/>
+      </StackPanel>
+      <ComboBox x:Name="CameraSelector" Grid.Column="1" DisplayMemberPath="DisplayName"
+          materialDesign:HintAssist.Hint="攝影機"/>
+    </Grid>
+
+    <ScrollViewer Grid.Row="1" Margin="0,18,0,0" VerticalScrollBarVisibility="Auto"
+        HorizontalScrollBarVisibility="Disabled">
+      <StackPanel>
+        <CheckBox Margin="0,2,0,15" FontSize="15" Content="啟用此攝影機的事件偵測"
+            IsChecked="{Binding ElementName=CameraSelector, Path=SelectedItem.Enabled}"/>
+
+        <materialDesign:Card Padding="18" Margin="0,0,0,14" UniformCornerRadius="10"
+            Background="{StaticResource FloatingSurfaceBrush}">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+              <materialDesign:PackIcon Kind="GestureTapButton" Foreground="{StaticResource AccentBrush}"/>
+              <TextBlock Margin="9,0,0,0" FontSize="16" FontWeight="SemiBold" Text="觸發動作"/>
+            </StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>
+              <StackPanel>
+                <CheckBox Content="跳出警示視窗"
+                  IsChecked="{Binding ElementName=CameraSelector, Path=SelectedItem.ShowPopup}"/>
+                <CheckBox Margin="0,12,0,0" Content="播放警報音效（直到確認或事件結束）"
+                  IsChecked="{Binding ElementName=CameraSelector, Path=SelectedItem.PlayAlarmSound}"/>
+              </StackPanel>
+              <ComboBox Grid.Column="2" VerticalAlignment="Center"
+                  ItemsSource="{Binding RelativeSource={RelativeSource AncestorType=UserControl}, Path=AlarmSounds}"
+                  SelectedItem="{Binding ElementName=CameraSelector, Path=SelectedItem.AlarmSound}"
+                  materialDesign:HintAssist.Hint="警報音效"/>
+            </Grid>
+          </StackPanel>
+        </materialDesign:Card>
+
+        <materialDesign:Card Padding="18" Margin="0,0,0,14" UniformCornerRadius="10"
+            Background="{StaticResource FloatingSurfaceBrush}">
+          <StackPanel>
+            <TextBlock FontSize="16" FontWeight="SemiBold" Text="事件類型啟用"/>
+            <WrapPanel Margin="0,14,0,16">
+              <CheckBox Margin="0,0,24,8" Content="程式內部預警"
+                  IsChecked="{Binding ElementName=CameraSelector, Path=SelectedItem.InternalWarningEnabled}"/>
+              <CheckBox Margin="0,0,24,8" Content="程式內部警報"
+                  IsChecked="{Binding ElementName=CameraSelector, Path=SelectedItem.InternalAlarmEnabled}"/>
+              <CheckBox Margin="0,0,0,8" Content="程式內部溫升"
+                  IsChecked="{Binding ElementName=CameraSelector, Path=SelectedItem.InternalRiseEnabled}"/>
+            </WrapPanel>
+            <Grid Margin="0,0,0,7">
+              <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="92"/><ColumnDefinition Width="92"/><ColumnDefinition Width="92"/><ColumnDefinition Width="92"/><ColumnDefinition Width="92"/></Grid.ColumnDefinitions>
+              <TextBlock FontWeight="SemiBold" Text="框溫"/>
+              <TextBlock Grid.Column="1" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Text="內部預警"/>
+              <TextBlock Grid.Column="2" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Text="內部警報"/>
+              <TextBlock Grid.Column="3" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Text="內部溫升"/>
+              <TextBlock Grid.Column="4" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Text="熱像儀預警"/>
+              <TextBlock Grid.Column="5" HorizontalAlignment="Center" FontSize="11" FontWeight="SemiBold" Text="熱像儀警報"/>
+            </Grid>
+            <ItemsControl ItemsSource="{Binding ElementName=CameraSelector, Path=SelectedItem.ThermalRegions}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                  <Grid Margin="0,4">
+                    <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="92"/><ColumnDefinition Width="92"/><ColumnDefinition Width="92"/><ColumnDefinition Width="92"/><ColumnDefinition Width="92"/></Grid.ColumnDefinitions>
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Label}"/>
+                    <CheckBox Grid.Column="1" HorizontalAlignment="Center" IsChecked="{Binding InternalWarningEnabled}"/>
+                    <CheckBox Grid.Column="2" HorizontalAlignment="Center" IsChecked="{Binding InternalAlarmEnabled}"/>
+                    <CheckBox Grid.Column="3" HorizontalAlignment="Center" IsChecked="{Binding InternalRiseEnabled}"/>
+                    <CheckBox Grid.Column="4" HorizontalAlignment="Center" IsChecked="{Binding WarningEnabled}"/>
+                    <CheckBox Grid.Column="5" HorizontalAlignment="Center" IsChecked="{Binding AlarmEnabled}"/>
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </materialDesign:Card>
+
+        <materialDesign:Card Padding="18" Margin="0,0,0,14" UniformCornerRadius="10"
+            Background="{StaticResource FloatingSurfaceBrush}">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+              <materialDesign:PackIcon Kind="ThermometerAlert" Foreground="{StaticResource AccentBrush}"/>
+              <TextBlock Margin="9,0,0,0" FontSize="16" FontWeight="SemiBold" Text="高溫事件"/>
+            </StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>
+              <TextBox materialDesign:HintAssist.Hint="預警溫度（°C）"
+                  Text="{Binding ElementName=CameraSelector, Path=SelectedItem.WarningTemperature}"/>
+              <TextBox Grid.Column="2" materialDesign:HintAssist.Hint="警報溫度（°C）"
+                  Text="{Binding ElementName=CameraSelector, Path=SelectedItem.AlarmTemperature}"/>
+            </Grid>
+            <Grid Margin="0,18,0,0">
+              <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>
+              <TextBox materialDesign:HintAssist.Hint="確認次數（confirmCycle）"
+                  Text="{Binding ElementName=CameraSelector, Path=SelectedItem.HighTemperatureConfirmCycle}"/>
+              <TextBox Grid.Column="2" materialDesign:HintAssist.Hint="解除回差（Deadband °C）"
+                  Text="{Binding ElementName=CameraSelector, Path=SelectedItem.HighTemperatureDeadband}"/>
+            </Grid>
+          </StackPanel>
+        </materialDesign:Card>
+
+        <materialDesign:Card Padding="18" Margin="0,0,0,14" UniformCornerRadius="10"
+            Background="{StaticResource FloatingSurfaceBrush}">
+          <StackPanel>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+              <materialDesign:PackIcon Kind="TrendingUp" Foreground="{StaticResource AccentBrush}"/>
+              <TextBlock Margin="9,0,0,0" FontSize="16" FontWeight="SemiBold" Text="溫升事件"/>
+            </StackPanel>
+            <Grid>
+              <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>
+              <TextBox materialDesign:HintAssist.Hint="溫升門檻（°C）"
+                  Text="{Binding ElementName=CameraSelector, Path=SelectedItem.TemperatureRise}"/>
+              <TextBox Grid.Column="2" materialDesign:HintAssist.Hint="觀察時間（秒）"
+                  Text="{Binding ElementName=CameraSelector, Path=SelectedItem.RiseWindowSeconds}"/>
+            </Grid>
+            <Grid Margin="0,18,0,0">
+              <Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>
+              <TextBox materialDesign:HintAssist.Hint="確認次數（confirmCycle）"
+                  Text="{Binding ElementName=CameraSelector, Path=SelectedItem.RiseConfirmCycle}"/>
+              <TextBox Grid.Column="2" materialDesign:HintAssist.Hint="解除回差（Deadband °C）"
+                  Text="{Binding ElementName=CameraSelector, Path=SelectedItem.RiseDeadband}"/>
+            </Grid>
+          </StackPanel>
+        </materialDesign:Card>
+
+        <TextBox Margin="0,2,0,8" materialDesign:HintAssist.Hint="事件達標後持續確認時間（秒）"
+            Text="{Binding ElementName=CameraSelector, Path=SelectedItem.TriggerSeconds}"/>
+        <TextBlock Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
+            Text="連續量測達到 confirmCycle 次後開始確認；觸發後低於門檻減去 Deadband 才會解除。"/>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Button Grid.Row="2" Margin="0,18,4,4" MinWidth="160" Height="48" Padding="20,0"
+        HorizontalAlignment="Right" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
+        Style="{StaticResource MaterialDesignRaisedButton}" Content="儲存事件設定"
+        Click="SaveEventsClick"/>
+  </Grid>
+</UserControl>

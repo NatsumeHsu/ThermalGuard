@@ -1,0 +1,91 @@
+<Window x:Class="ThermalGuard.Views.AddCameraDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    Title="新增串流"
+    Width="660"
+    Height="620"
+    WindowStyle="None"
+    AllowsTransparency="True"
+    ResizeMode="NoResize"
+    ShowInTaskbar="False"
+    WindowStartupLocation="CenterOwner"
+    Background="Transparent"
+    Foreground="{StaticResource TextBrush}">
+  <Grid Margin="18" TextElement.Foreground="{StaticResource TextBrush}">
+    <materialDesign:Card Padding="28"
+        UniformCornerRadius="20"
+        Style="{StaticResource FloatingCardStyle}">
+      <Grid>
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <StackPanel Orientation="Horizontal"
+            Background="Transparent"
+            MouseLeftButtonDown="TitleBarMouseLeftButtonDown">
+          <Border Width="44" Height="44" CornerRadius="12"
+              Background="{StaticResource PrimaryContainerBrush}">
+            <materialDesign:PackIcon Kind="CameraPlus" Width="22" Height="22"
+                Foreground="{StaticResource AccentBrush}"
+                HorizontalAlignment="Center" VerticalAlignment="Center"/>
+          </Border>
+          <TextBlock Margin="12,0" FontSize="21" FontWeight="SemiBold"
+              VerticalAlignment="Center" Text="新增串流"/>
+        </StackPanel>
+        <Grid Grid.Row="1" Margin="0,28,0,0">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="150"/><ColumnDefinition Width="18"/><ColumnDefinition/>
+          </Grid.ColumnDefinitions>
+          <ComboBox x:Name="IdBox" materialDesign:HintAssist.Hint="通道"
+              Style="{StaticResource OutlinedComboBoxStyle}"
+              ItemsSource="{Binding AvailableIds, Mode=OneWay}"
+              SelectionChanged="IdSelectionChanged"/>
+          <TextBox x:Name="NameBox" Grid.Column="2"
+              materialDesign:HintAssist.Hint="串流名稱"/>
+        </Grid>
+        <ComboBox x:Name="SourceTypeBox" Grid.Row="2" Margin="0,22,0,0"
+            SelectedIndex="0" SelectionChanged="SourceTypeSelectionChanged"
+            materialDesign:HintAssist.Hint="來源類型"
+            Style="{StaticResource OutlinedComboBoxStyle}">
+          <ComboBoxItem Content="RTSP 串流"/><ComboBoxItem Content="熱像儀"/>
+        </ComboBox>
+        <Grid x:Name="ThermalOptions" Grid.Row="3" Margin="0,22,0,0" Visibility="Collapsed">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/>
+          </Grid.ColumnDefinitions>
+          <ComboBox x:Name="ImagingTypeBox" SelectedIndex="0"
+              materialDesign:HintAssist.Hint="影像類型"
+              Style="{StaticResource OutlinedComboBoxStyle}">
+            <ComboBoxItem Content="可見光"/><ComboBoxItem Content="熱成像"/>
+          </ComboBox>
+          <ComboBox x:Name="StreamTypeBox" Grid.Column="2" SelectedIndex="0"
+              materialDesign:HintAssist.Hint="碼流類型"
+              Style="{StaticResource OutlinedComboBoxStyle}">
+            <ComboBoxItem Content="主碼流"/><ComboBoxItem Content="子碼流"/>
+          </ComboBox>
+        </Grid>
+        <TextBox x:Name="RtspBox" Grid.Row="4" Margin="0,22,0,0"
+            materialDesign:HintAssist.Hint="RTSP 串流網址（rtsp:// 或 rtsps://）"/>
+        <Grid x:Name="ThermalCameraFields" Grid.Row="4" Margin="0,22,0,0" Visibility="Collapsed">
+          <Grid.ColumnDefinitions>
+            <ColumnDefinition/><ColumnDefinition Width="12"/><ColumnDefinition/>
+            <ColumnDefinition Width="12"/><ColumnDefinition Width="1.3*"/>
+            <ColumnDefinition Width="12"/><ColumnDefinition Width="72"/>
+          </Grid.ColumnDefinitions>
+          <TextBox x:Name="UsernameBox" materialDesign:HintAssist.Hint="帳號"/>
+          <PasswordBox x:Name="PasswordBox" Grid.Column="2" materialDesign:HintAssist.Hint="密碼"/>
+          <TextBox x:Name="IpBox" Grid.Column="4" materialDesign:HintAssist.Hint="IP 位址"/>
+          <TextBox x:Name="PortBox" Grid.Column="6" Text="554" materialDesign:HintAssist.Hint="Port"/>
+        </Grid>
+        <StackPanel Grid.Row="6" Margin="0,26,0,0" Orientation="Horizontal" HorizontalAlignment="Right">
+          <Button Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"
+              Content="取消" Click="CancelClick"/>
+          <Button Style="{StaticResource MaterialDesignRaisedButton}" Content="儲存並連線" Click="SaveClick"/>
+        </StackPanel>
+      </Grid>
+    </materialDesign:Card>
+  </Grid>
+</Window>

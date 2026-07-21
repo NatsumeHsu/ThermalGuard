@@ -1,0 +1,25 @@
+namespace ThermalGuard.Models;
+
+public sealed record EventSettings(
+    string CameraId,
+    bool Enabled,
+    double WarningTemperature,
+    double AlarmTemperature,
+    int TriggerSeconds,
+    double TemperatureRise,
+    int RiseWindowSeconds,
+    int HighTemperatureConfirmCycle,
+    double HighTemperatureDeadband,
+    int RiseConfirmCycle,
+    double RiseDeadband,
+    bool ShowPopup,
+    bool PlayAlarmSound,
+    string AlarmSound,
+    int ThermalWarningRegionMask,
+    int ThermalAlarmRegionMask,
+    bool InternalWarningEnabled,
+    bool InternalAlarmEnabled,
+    bool InternalRiseEnabled,
+    int InternalWarningRegionMask,
+    int InternalAlarmRegionMask,
+    int InternalRiseRegionMask);

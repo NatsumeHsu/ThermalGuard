@@ -1,0 +1,5 @@
+**/bin/
+**/obj/
+**/data/*.db
+*.user
+*.suo

@@ -1,0 +1,70 @@
+<UserControl x:Class="ThermalGuard.Controls.CameraTile"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
+             Background="Transparent"
+             Foreground="{StaticResource TextBrush}">
+  <materialDesign:Card Margin="4"
+                       UniformCornerRadius="8"
+                       Background="#0C0E12"
+                       ClipToBounds="True">
+    <Grid>
+      <vlc:VideoView MediaPlayer="{Binding Player, Mode=OneWay}">
+        <Grid Background="Transparent"
+              IsHitTestVisible="False">
+          <Border Margin="10"
+                  Padding="10,5"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Top"
+                  CornerRadius="6"
+                  Background="#B3000000">
+            <TextBlock MaxWidth="260"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Foreground="White"
+                       TextTrimming="CharacterEllipsis"
+                       Text="{Binding Name, Mode=OneWay}"/>
+          </Border>
+          <Border Margin="10"
+                  Padding="10,5"
+                  HorizontalAlignment="Left"
+                  VerticalAlignment="Bottom"
+                  CornerRadius="6"
+                  Background="#B3000000">
+            <TextBlock FontSize="12"
+                       Foreground="White"
+                       Text="{Binding StreamStatus, Mode=OneWay}"/>
+          </Border>
+        </Grid>
+      </vlc:VideoView>
+
+      <StackPanel HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  IsHitTestVisible="False">
+        <StackPanel.Style>
+          <Style TargetType="StackPanel">
+            <Setter Property="Visibility"
+                Value="Collapsed"/>
+            <Style.Triggers>
+              <DataTrigger Binding="{Binding}"
+                  Value="{x:Null}">
+                <Setter Property="Visibility"
+                    Value="Visible"/>
+              </DataTrigger>
+            </Style.Triggers>
+          </Style>
+        </StackPanel.Style>
+        <materialDesign:PackIcon Kind="VideoOffOutline"
+                                 Width="52"
+                                 Height="52"
+                                 HorizontalAlignment="Center"
+                                 Foreground="{StaticResource MutedBrush}"/>
+        <TextBlock Margin="0,8,0,0"
+                   HorizontalAlignment="Center"
+                   Foreground="{StaticResource MutedBrush}"
+                   Text="沒有影像"/>
+      </StackPanel>
+    </Grid>
+  </materialDesign:Card>
+</UserControl>
