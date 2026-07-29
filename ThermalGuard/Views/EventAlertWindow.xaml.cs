@@ -18,6 +18,17 @@ public partial class EventAlertWindow : Window
         Loaded += (_, _) => PlaceAtTopRight();
     }
 
+    public EventAlertWindow(Camera camera, ActiveRegionAlarm alarm, Action confirm)
+    {
+        InitializeComponent();
+        _confirm = confirm;
+        CameraText.Text = $"{camera.Id}  {camera.Name}";
+        EventText.Text = alarm.EventType;
+        TemperatureText.Text = $"目前溫度：{alarm.Temperature:F1} °C";
+        RegionText.Text = $"框溫 {alarm.RegionNumber}";
+        Loaded += (_, _) => PlaceAtTopRight();
+    }
+
     private void PlaceAtTopRight()
     {
         var area = SystemParameters.WorkArea;

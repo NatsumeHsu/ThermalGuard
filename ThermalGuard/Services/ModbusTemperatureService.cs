@@ -61,7 +61,7 @@ public sealed class ModbusTemperatureService : IAsyncDisposable
                     }
                     _ = Application.Current.Dispatcher.BeginInvoke(() =>
                     {
-                        camera.UpdateThermalRegions(temperatures, eventCodes, setting.EnabledRegionMask);
+                        camera.UpdateThermalRegions(temperatures, eventCodes);
                     });
                     await Task.Delay(setting.PollIntervalMs, token);
                 }

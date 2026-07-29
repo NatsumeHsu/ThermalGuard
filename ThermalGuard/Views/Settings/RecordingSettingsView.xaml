@@ -31,7 +31,7 @@
       <TextBlock x:Name="AvailableSpaceText" Margin="0,16,0,0"
           Foreground="{StaticResource MutedBrush}" Text="可用空間：讀取中"/>
       <TextBlock Margin="0,18,0,0" Foreground="{StaticResource MutedBrush}" TextWrapping="Wrap"
-          Text="事件觸發條件為攝影機狀態進入「溫升」、「預警」或「警報」。若 21 組框溫全部停用，仍會保留循環暫存，但不會產生事件影片。完成的事件影片使用 MPEG-TS 格式。"/>
+          Text="事件觸發條件為攝影機狀態進入「溫升」、「預警」或「警報」。21 組框溫會由 Modbus 固定讀取，各框是否觸發事件由事件設定決定。完成的事件影片使用 MPEG-TS 格式。"/>
       <Button Margin="0,26,4,6" MinWidth="160" Height="48" Padding="20,0"
           HorizontalAlignment="Right" VerticalContentAlignment="Center" HorizontalContentAlignment="Center"
           Style="{StaticResource MaterialDesignRaisedButton}" Content="儲存錄影設定"

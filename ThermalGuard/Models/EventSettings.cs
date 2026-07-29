@@ -17,9 +17,6 @@ public sealed record EventSettings(
     string AlarmSound,
     int ThermalWarningRegionMask,
     int ThermalAlarmRegionMask,
-    bool InternalWarningEnabled,
-    bool InternalAlarmEnabled,
-    bool InternalRiseEnabled,
     int InternalWarningRegionMask,
     int InternalAlarmRegionMask,
     int InternalRiseRegionMask);

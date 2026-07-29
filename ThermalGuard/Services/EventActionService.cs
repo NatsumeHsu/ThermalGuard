@@ -11,8 +11,10 @@ public sealed class EventActionService : IDisposable
     public static IReadOnlyList<string> AlarmSounds { get; } =
         ["警報音 1", "警報音 2", "警報音 3"];
 
+    private readonly Dictionary<string, string> _soundingAlarms = [];
+    private readonly Dictionary<string, EventAlertWindow> _windows = [];
     private readonly Dictionary<Camera, string> _soundingCameras = [];
-    private readonly Dictionary<Camera, EventAlertWindow> _windows = [];
+    private readonly Dictionary<Camera, EventAlertWindow> _cameraWindows = [];
     private SoundPlayer? _player;
     private MemoryStream? _soundStream;
 
@@ -26,13 +28,13 @@ public sealed class EventActionService : IDisposable
                 Play(camera.AlarmSound);
             }
 
-            if (!camera.ShowPopup || _windows.ContainsKey(camera)) return;
+            if (!camera.ShowPopup || _cameraWindows.ContainsKey(camera)) return;
             var window = new EventAlertWindow(camera, () => Acknowledge(camera))
             {
                 Owner = Application.Current.MainWindow
             };
-            window.Closed += (_, _) => _windows.Remove(camera);
-            _windows[camera] = window;
+            window.Closed += (_, _) => _cameraWindows.Remove(camera);
+            _cameraWindows[camera] = window;
             window.Show();
         });
     }
@@ -43,8 +45,45 @@ public sealed class EventActionService : IDisposable
         {
             _soundingCameras.Remove(camera);
             RefreshSound();
-            if (_windows.Remove(camera, out var window)) window.Close();
+            if (_cameraWindows.Remove(camera, out var window)) window.Close();
         });
+    }
+
+    public void Execute(Camera camera, ActiveRegionAlarm alarm)
+    {
+        Application.Current.Dispatcher.BeginInvoke(() =>
+        {
+            var setting = alarm.Settings;
+            if (setting.PlayAlarmSound)
+            {
+                _soundingAlarms[alarm.Key] = setting.AlarmSound;
+                Play(setting.AlarmSound);
+            }
+            if (!setting.ShowPopup || _windows.ContainsKey(alarm.Key)) return;
+            var window = new EventAlertWindow(camera, alarm, () => Acknowledge(alarm.Key))
+            {
+                Owner = Application.Current.MainWindow
+            };
+            window.Closed += (_, _) => _windows.Remove(alarm.Key);
+            _windows[alarm.Key] = window;
+            window.Show();
+        });
+    }
+
+    public void Resolve(string alarmKey)
+    {
+        Application.Current.Dispatcher.BeginInvoke(() =>
+        {
+            _soundingAlarms.Remove(alarmKey);
+            RefreshSound();
+            if (_windows.Remove(alarmKey, out var window)) window.Close();
+        });
+    }
+
+    public void Acknowledge(string alarmKey)
+    {
+        _soundingAlarms.Remove(alarmKey);
+        RefreshSound();
     }
 
     public void Acknowledge(Camera camera)
@@ -55,12 +94,12 @@ public sealed class EventActionService : IDisposable
 
     private void RefreshSound()
     {
-        if (_soundingCameras.Count == 0)
+        if (_soundingAlarms.Count == 0 && _soundingCameras.Count == 0)
         {
             StopSound();
             return;
         }
-        Play(_soundingCameras.Values.Last());
+        Play(_soundingAlarms.Count > 0 ? _soundingAlarms.Values.Last() : _soundingCameras.Values.Last());
     }
 
     private void Play(string sound)
@@ -122,7 +161,10 @@ public sealed class EventActionService : IDisposable
     {
         StopSound();
         foreach (var window in _windows.Values.ToArray()) window.Close();
+        foreach (var window in _cameraWindows.Values.ToArray()) window.Close();
         _windows.Clear();
+        _cameraWindows.Clear();
         _soundingCameras.Clear();
+        _soundingAlarms.Clear();
     }
 }

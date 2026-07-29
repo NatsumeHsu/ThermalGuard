@@ -1,6 +1,6 @@
 namespace ThermalGuard.Data.Entities;
 
-public sealed class RecordingSettingEntity
+public sealed class RecordingSetting
 {
     public int Id { get; set; }
     public bool Enabled { get; set; }

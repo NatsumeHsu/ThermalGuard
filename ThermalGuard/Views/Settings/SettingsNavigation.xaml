@@ -1,0 +1,10 @@
+<UserControl x:Class="ThermalGuard.Views.Settings.SettingsNavigation"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes">
+  <ListBox x:Name="Menu" Margin="14" SelectedIndex="0" SelectionChanged="MenuSelectionChanged" Background="Transparent" BorderThickness="0">
+    <ListBoxItem Padding="14,12"><StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="Cctv" Margin="0,0,12,0"/><TextBlock Text="串流設定"/></StackPanel></ListBoxItem>
+    <ListBoxItem Padding="14,12"><StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="Alert" Margin="0,0,12,0"/><TextBlock Text="事件與警報"/></StackPanel></ListBoxItem>
+    <ListBoxItem Padding="14,12"><StackPanel Orientation="Horizontal"><materialDesign:PackIcon Kind="RecordRec" Margin="0,0,12,0"/><TextBlock Text="錄影設定"/></StackPanel></ListBoxItem>
+  </ListBox>
+</UserControl>

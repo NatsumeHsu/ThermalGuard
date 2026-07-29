@@ -267,7 +267,7 @@
         Background="{StaticResource PanelBrush}">
       <Grid>
         <ItemsControl x:Name="CameraWall"
-            ItemsSource="{Binding DisplayedCameraSlots, Mode=OneWay}"
+            ItemsSource="{Binding DisplayedCameras, Mode=OneWay}"
             AllowDrop="True"
             Drop="WallDrop"
             DragOver="WallDragOver">
@@ -280,7 +280,7 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate>
-              <controls:CameraTile DataContext="{Binding Camera, Mode=OneWay}"
+              <controls:CameraTile DataContext="{Binding}"
                   MouseLeftButtonDown="TileMouseDown"
                   MouseMove="TileMouseMove"
                   MouseDoubleClick="TileMouseDoubleClick"/>

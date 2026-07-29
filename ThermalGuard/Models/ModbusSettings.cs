@@ -9,5 +9,4 @@ public sealed record ModbusSettings(
     ushort RegisterAddress,
     ushort AlarmRegisterAddress,
     string AccessMode,
-    int EnabledRegionMask,
     int PollIntervalMs);

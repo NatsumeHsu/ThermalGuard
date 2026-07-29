@@ -24,6 +24,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private readonly ConcurrentDictionary<Camera, byte> _authenticationErrors = new();
     private readonly ConcurrentDictionary<Camera, byte> _removedCameras = new();
     private readonly ConcurrentDictionary<Camera, string> _lastEventStatuses = new();
+    private readonly ConcurrentDictionary<Camera, HashSet<string>> _lastRegionAlarmKeys = new();
     private readonly Dictionary<Camera, CameraEvent> _activeEvents = [];
     private RecordingService? _recording;
     private ModbusTemperatureService? _modbus;
@@ -41,7 +42,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private bool _suppressAutomaticDisplay;
 
     public ObservableCollection<Camera> Cameras { get; } = [];
-    public ObservableCollection<CameraSlot> DisplayedCameraSlots { get; } = [];
+    public ObservableCollection<Camera?> DisplayedCameras { get; } = [];
     public ObservableCollection<CameraEvent> Events { get; } = [];
     public Camera? SelectedCamera { get => _selectedCamera; set => Set(ref _selectedCamera, value); }
     public Camera? MaximizedCamera
@@ -89,33 +90,28 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private void RefreshDisplayedCameras()
     {
         var capacity = MaximizedCamera is null ? EffectiveColumns * EffectiveColumns : 1;
-        while (DisplayedCameraSlots.Count > capacity)
-            DisplayedCameraSlots.RemoveAt(DisplayedCameraSlots.Count - 1);
+        while (DisplayedCameras.Count > capacity)
+            DisplayedCameras.RemoveAt(DisplayedCameras.Count - 1);
 
         if (MaximizedCamera is not null)
         {
-            if (DisplayedCameraSlots.Count == 0) DisplayedCameraSlots.Add(new CameraSlot());
-            DisplayedCameraSlots[0].Camera = MaximizedCamera;
+            if (DisplayedCameras.Count == 0) DisplayedCameras.Add(MaximizedCamera);
+            else DisplayedCameras[0] = MaximizedCamera;
             return;
         }
 
-        var displayed = DisplayedCameraSlots
-            .Select(slot => slot.Camera)
-            .OfType<Camera>()
-            .ToHashSet();
+        var displayed = DisplayedCameras.OfType<Camera>().ToHashSet();
         var available = new Queue<Camera>(Cameras.Where(camera => !displayed.Contains(camera)));
 
-        while (DisplayedCameraSlots.Count < capacity)
-            DisplayedCameraSlots.Add(new CameraSlot
-            {
-                Camera = !_suppressAutomaticDisplay && available.Count > 0 ? available.Dequeue() : null
-            });
+        while (DisplayedCameras.Count < capacity)
+            DisplayedCameras.Add(!_suppressAutomaticDisplay && available.Count > 0
+                ? available.Dequeue()
+                : null);
 
         if (_suppressAutomaticDisplay) return;
-        foreach (var slot in DisplayedCameraSlots.Where(slot => slot.Camera is null))
+        for (var index = 0; index < DisplayedCameras.Count && available.Count > 0; index++)
         {
-            if (available.Count == 0) break;
-            slot.Camera = available.Dequeue();
+            if (DisplayedCameras[index] is null) DisplayedCameras[index] = available.Dequeue();
         }
     }
 
@@ -131,6 +127,22 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             .ToDictionary(setting => setting.CameraId, StringComparer.OrdinalIgnoreCase);
         foreach (var camera in Cameras)
             if (eventSettings.TryGetValue(camera.Id, out var setting)) camera.ApplyEventSettings(setting);
+        var regionAlarmSettings = await _database.LoadRegionAlarmSettingsAsync();
+        var configuredCameraIds = regionAlarmSettings.Select(item => item.CameraId)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var missingRegionAlarmSettings = Cameras.Where(camera => !configuredCameraIds.Contains(camera.Id))
+            .SelectMany(CreateDefaultRegionAlarmSettings).ToArray();
+        if (missingRegionAlarmSettings.Length > 0)
+        {
+            await _database.SaveRegionAlarmSettingsAsync(missingRegionAlarmSettings);
+            regionAlarmSettings.AddRange(missingRegionAlarmSettings);
+        }
+        foreach (var camera in Cameras)
+        {
+            var values = regionAlarmSettings.Where(item =>
+                item.CameraId.Equals(camera.Id, StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (values.Length > 0) camera.ApplyRegionAlarmSettings(values);
+        }
         _modbus = new ModbusTemperatureService(Cameras);
         await _modbus.ApplyAsync(NormalizeModbusSettings(await _database.LoadModbusSettingsAsync()));
         SelectedCamera = Cameras.FirstOrDefault();
@@ -162,15 +174,72 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     }
 
     public Task<RecordingSettings> LoadRecordingSettingsAsync() => _database.LoadRecordingAsync();
-    public Task<List<ModbusSettings>> LoadModbusSettingsAsync() => _database.LoadModbusSettingsAsync();
-    public Task ExportSettingsAsync(string path) => _database.ExportAsync(path);
-    public Task<string> ImportSettingsAsync(string path) => _database.ImportAsync(path);
-
-    public async Task SaveModbusSettingsAsync(IEnumerable<ModbusSettings> settings)
+    public Task ExportSettingsAsync(string path, string entityName) =>
+        _database.ExportAsync(path, entityName);
+    public async Task<string> ImportSettingsAsync(string path, string entityName)
     {
-        var values = NormalizeModbusSettings(settings);
-        await _database.SaveModbusSettingsAsync(values);
-        if (_modbus is not null) await _modbus.ApplyAsync(values);
+        var backup = await _database.ImportAsync(path, entityName);
+        switch (entityName)
+        {
+            case "camera":
+                await ReloadCamerasAsync();
+                break;
+            case "region_alarm_setting":
+                var settings = await _database.LoadRegionAlarmSettingsAsync();
+                foreach (var camera in Cameras)
+                    camera.ApplyRegionAlarmSettings(settings.Where(item =>
+                        item.CameraId.Equals(camera.Id, StringComparison.OrdinalIgnoreCase)));
+                break;
+            case "recording_setting":
+                await ApplyRecordingSettingsAsync(await _database.LoadRecordingAsync());
+                break;
+        }
+        return backup;
+    }
+
+    private async Task ReloadCamerasAsync()
+    {
+        var imported = await _database.LoadCamerasAsync();
+        var current = Cameras.ToDictionary(item => item.Id, StringComparer.OrdinalIgnoreCase);
+        foreach (var value in imported)
+        {
+            if (current.TryGetValue(value.Id, out var camera))
+            {
+                camera.Name = value.Name;
+                camera.Rtsp = value.Rtsp;
+                camera.SourceType = value.SourceType;
+                camera.ImagingType = value.ImagingType;
+                camera.StreamType = value.StreamType;
+                camera.SortOrder = value.SortOrder;
+                if (_recording is not null) await _recording.RefreshCameraAsync(camera);
+            }
+            else
+            {
+                var defaults = CreateDefaultRegionAlarmSettings(value).ToArray();
+                await _database.SaveRegionAlarmSettingsAsync(defaults);
+                value.ApplyRegionAlarmSettings(defaults);
+                Track(value);
+                Cameras.Add(value);
+                _recording?.AddCamera(value);
+            }
+        }
+
+        var order = imported.Select(item => item.Id).ToArray();
+        for (var index = 0; index < order.Length; index++)
+        {
+            var camera = Cameras.First(item =>
+                item.Id.Equals(order[index], StringComparison.OrdinalIgnoreCase));
+            var currentIndex = Cameras.IndexOf(camera);
+            if (currentIndex != index) Cameras.Move(currentIndex, index);
+        }
+
+        if (_modbus is not null)
+        {
+            var modbus = NormalizeModbusSettings(await _database.LoadModbusSettingsAsync());
+            await _database.SaveModbusSettingsAsync(modbus);
+            await _modbus.ApplyAsync(modbus);
+        }
+        await ReconnectDisplayedCamerasAsync();
     }
 
     private ModbusSettings[] NormalizeModbusSettings(IEnumerable<ModbusSettings> settings)
@@ -191,7 +260,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                     RegisterAddress = 0,
                     AlarmRegisterAddress = 4
                 }
-                : new ModbusSettings(camera.Id, false, GetCameraHost(camera), 502, 1, 0, 4, "唯讀", 0, 1000);
+                : new ModbusSettings(camera.Id, false, GetCameraHost(camera), 502, 1, 0, 4, "唯讀", 1000);
             })
             .ToArray();
     }
@@ -200,6 +269,53 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         Uri.TryCreate(camera.Rtsp, UriKind.Absolute, out var uri) ? uri.Host : "127.0.0.1";
 
     public IReadOnlyList<Camera> EventSettingCameras => Cameras;
+
+    public Task<List<RegionAlarmSettings>> LoadRegionAlarmSettingsAsync() =>
+        _database.LoadRegionAlarmSettingsAsync();
+
+    public async Task SaveRegionAlarmSettingsAsync(IEnumerable<RegionAlarmSettings> settings)
+    {
+        var values = settings.ToArray();
+        await _database.SaveRegionAlarmSettingsAsync(values);
+        foreach (var camera in Cameras)
+            camera.ApplyRegionAlarmSettings(values.Where(item =>
+                item.CameraId.Equals(camera.Id, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static IEnumerable<RegionAlarmSettings> CreateDefaultRegionAlarmSettings(Camera camera)
+    {
+        string[] eventTypes =
+            ["程式內部預警", "程式內部警報", "程式內部溫升", "熱像儀預警", "熱像儀警報"];
+        for (var region = 1; region <= 21; region++)
+        foreach (var eventType in eventTypes)
+        {
+            var bit = 1 << (region - 1);
+            var enabled = eventType switch
+            {
+                "程式內部預警" => (camera.InternalWarningRegionMask & bit) != 0,
+                "程式內部警報" => (camera.InternalAlarmRegionMask & bit) != 0,
+                "程式內部溫升" => (camera.InternalRiseRegionMask & bit) != 0,
+                "熱像儀預警" => (camera.ThermalWarningRegionMask & bit) != 0,
+                "熱像儀警報" => (camera.ThermalAlarmRegionMask & bit) != 0,
+                _ => false
+            };
+            var triggerValue = eventType switch
+            {
+                "程式內部預警" => camera.WarningTemperature,
+                "程式內部警報" => camera.AlarmTemperature,
+                "程式內部溫升" => camera.TemperatureRise,
+                _ => 0
+            };
+            var isRise = eventType == "程式內部溫升";
+            var isInternal = eventType.StartsWith("程式內部", StringComparison.Ordinal);
+            yield return new RegionAlarmSettings(camera.Id, region, eventType, enabled, triggerValue,
+                isInternal ? camera.TriggerSeconds : 0,
+                isInternal ? isRise ? camera.RiseConfirmCycle : camera.HighTemperatureConfirmCycle : 1,
+                isInternal ? isRise ? camera.RiseDeadband : camera.HighTemperatureDeadband : 0,
+                isRise ? camera.RiseWindowSeconds : 60, camera.ShowPopup, camera.PlayAlarmSound,
+                camera.AlarmSound, "直到確認或事件結束", 10);
+        }
+    }
 
     public async Task SaveEventSettingsAsync(IEnumerable<EventSettings> settings)
     {
@@ -213,6 +329,11 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     public async Task SaveRecordingSettingsAsync(RecordingSettings settings)
     {
         await _database.SaveRecordingAsync(settings);
+        await ApplyRecordingSettingsAsync(settings);
+    }
+
+    private async Task ApplyRecordingSettingsAsync(RecordingSettings settings)
+    {
         _recordingOutputDirectory = settings.OutputDirectory;
         if (_recording is not null) await _recording.DisposeAsync();
         _recording = null;
@@ -241,6 +362,9 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
             SortOrder = Cameras.Count == 0 ? 1 : Cameras.Max(item => item.SortOrder) + 1
         };
         await _database.AddCameraAsync(camera);
+        var regionAlarmSettings = CreateDefaultRegionAlarmSettings(camera).ToArray();
+        await _database.SaveRegionAlarmSettingsAsync(regionAlarmSettings);
+        camera.ApplyRegionAlarmSettings(regionAlarmSettings);
         Track(camera);
         _suppressAutomaticDisplay = true;
         try
@@ -278,12 +402,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 await camera.ReleasePlaybackAsync();
                 _authenticationErrors.TryRemove(camera, out _);
                 if (ReferenceEquals(MaximizedCamera, camera)) MaximizedCamera = null;
-                foreach (var slot in DisplayedCameraSlots.Where(slot => ReferenceEquals(slot.Camera, camera)))
-                    slot.Camera = null;
+                for (var index = 0; index < DisplayedCameras.Count; index++)
+                    if (ReferenceEquals(DisplayedCameras[index], camera)) DisplayedCameras[index] = null;
                 _eventActions.Resolve(camera);
                 UpdateEventList(camera, false);
                 Cameras.Remove(camera);
                 _lastEventStatuses.TryRemove(camera, out _);
+                _lastRegionAlarmKeys.TryRemove(camera, out _);
                 SelectedCamera = Cameras.FirstOrDefault();
                 camera.Dispose();
             }
@@ -340,12 +465,13 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
 
     public async Task ReplaceDisplayedCameraAsync(Camera source, int targetIndex)
     {
-        if (targetIndex < 0 || targetIndex >= DisplayedCameraSlots.Count || ReferenceEquals(source, DisplayedCameraSlots[targetIndex].Camera)) return;
+        if (targetIndex < 0 || targetIndex >= DisplayedCameras.Count ||
+            ReferenceEquals(source, DisplayedCameras[targetIndex])) return;
 
-        var sourceSlot = DisplayedCameraSlots.FirstOrDefault(slot => ReferenceEquals(slot.Camera, source));
-        if (sourceSlot is not null) sourceSlot.Camera = null;
+        var sourceIndex = DisplayedCameras.IndexOf(source);
+        if (sourceIndex >= 0) DisplayedCameras[sourceIndex] = null;
 
-        DisplayedCameraSlots[targetIndex].Camera = source;
+        DisplayedCameras[targetIndex] = source;
 
         await _playbackRefreshGate.WaitAsync();
         try
@@ -372,7 +498,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         {
             await Task.WhenAll(Cameras.Select(camera => camera.StopPlaybackAsync()));
 
-            var visibleCameras = DisplayedCameraSlots.Select(slot => slot.Camera).OfType<Camera>().ToHashSet();
+            var visibleCameras = DisplayedCameras.OfType<Camera>().ToHashSet();
             var camerasToPlay = Cameras
                 .Where(camera => visibleCameras.Contains(camera) || _recording?.Records(camera) == true)
                 .ToArray();
@@ -420,7 +546,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
         await _playbackRefreshGate.WaitAsync();
         try
         {
-            var visible = DisplayedCameraSlots.Select(slot => slot.Camera).OfType<Camera>().ToHashSet();
+            var visible = DisplayedCameras.OfType<Camera>().ToHashSet();
             var camerasToPlay = Cameras
                 .Where(camera => visible.Contains(camera) || _recording?.Records(camera) == true)
                 .ToArray();
@@ -539,6 +665,7 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
     private void Track(Camera camera)
     {
         _lastEventStatuses[camera] = camera.Status;
+        _lastRegionAlarmKeys[camera] = [];
         camera.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(Camera.StreamOnline)) OnPropertyChanged(nameof(OnlineCount));
@@ -547,13 +674,26 @@ public sealed class MainViewModel : INotifyPropertyChanged, IAsyncDisposable
                 Application.Current.Dispatcher.BeginInvoke(() => UpdateActiveEventDetails(camera));
                 return;
             }
+            if (e.PropertyName == nameof(Camera.ActiveRegionAlarms))
+            {
+                var previousKeys = _lastRegionAlarmKeys[camera];
+                var current = camera.ActiveRegionAlarms.ToDictionary(item => item.Key);
+                foreach (var alarm in current.Values.Where(item => !previousKeys.Contains(item.Key)))
+                    _eventActions.Execute(camera, alarm);
+                foreach (var key in previousKeys.Where(key => !current.ContainsKey(key)).ToArray())
+                    _eventActions.Resolve(key);
+                _lastRegionAlarmKeys[camera] = current.Keys.ToHashSet();
+            }
             if (e.PropertyName != nameof(Camera.Status)) return;
             var previous = _lastEventStatuses.GetValueOrDefault(camera, "正常");
             _lastEventStatuses[camera] = camera.Status;
             var wasTriggered = previous is "溫升" or "預警" or "警報";
             var isTriggered = camera.Status is "溫升" or "預警" or "警報";
-            if (!wasTriggered && isTriggered) _eventActions.Execute(camera);
-            else if (wasTriggered && !isTriggered) _eventActions.Resolve(camera);
+            if (camera.ActiveRegionAlarms.Count == 0)
+            {
+                if (!wasTriggered && isTriggered) _eventActions.Execute(camera);
+                else if (wasTriggered && !isTriggered) _eventActions.Resolve(camera);
+            }
             Application.Current.Dispatcher.BeginInvoke(() => UpdateEventList(camera, isTriggered));
         };
     }
